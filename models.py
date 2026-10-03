@@ -1,6 +1,6 @@
 import enum
 from sqlalchemy import Boolean, Column, Enum, Float, ForeignKey, Integer, String
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base 
 
 # Cria a Base declarativa para os modelos
 Base = declarative_base()
