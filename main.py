@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from sqlalchemy.orm import DeclarativeBase
 
 class Base(DeclarativeBase):
-    pass
+    pass 
 
 app = FastAPI()
 
