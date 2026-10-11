@@ -1,69 +1,94 @@
 import enum
-from sqlalchemy import Boolean, Column, Enum, Float, ForeignKey, Integer, String
-from sqlalchemy.orm import declarative_base
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, Float, Enum, ForeignKey, DateTime, Table
+from sqlalchemy.orm import relationship
+from database import Base
 
-# Cria a Base declarativa para os modelos
-Base = declarative_base()
+order_item_flavors = Table(
+    'order_item_flavors',
+    Base.metadata,
+    Column('order_item_id', Integer, ForeignKey('order_items.id', ondelete="CASCADE"), primary_key=True),
+    Column('flavor_id', Integer, ForeignKey('flavors.id', ondelete="CASCADE"), primary_key=True)
+)
 
+class UserRole(str, enum.Enum):
+    CLIENT = "CLIENT"
+    ADMIN = "ADMIN"
+    DELIVERY = "DELIVERY"
 
-# 1. Definição do Enum (deve vir ANTES de ser usado nos modelos)
 class OrderStatus(str, enum.Enum):
-    PENDENTE = "PENDENTE"
-    EM_ANDAMENTO = "EM_ANDAMENTO"
-    ENTREGUE = "ENTREGUE"
-    CANCELADO = "CANCELADO"
+    PENDING = "PENDING"             
+    PREPARING = "PREPARING"      
+    OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY" 
+    DELIVERED = "DELIVERED"        
+    CANCELED = "CANCELED"
 
-
-# 2. Modelo de Usuários
 class User(Base):
     __tablename__ = "users"
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
-    name = Column("name", String)
-    email = Column("email", String, nullable=False, unique=True)
-    password = Column("password", String)
-    active = Column("active", Boolean, default=True)
-    admin = Column("admin", Boolean, default=False)
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    role = Column(Enum(UserRole), default=UserRole.CLIENT, nullable=False)
+    address = Column(String, nullable=True)
 
-    def __init__(self, name, email, password, active=True, admin=False):
-        self.name = name
-        self.email = email
-        self.password = password
-        self.active = active
-        self.admin = admin
+    orders = relationship("Order", back_populates="user")
 
+class PizzaSize(Base):
+    __tablename__ = "pizza_sizes"
 
-# 3. Modelo de Pedidos (Orders)
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False) 
+    max_flavors = Column(Integer, nullable=False, default=1) 
+    price = Column(Float, nullable=False) 
+
+class Crust(Base):
+    __tablename__ = "crusts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False) 
+    price = Column(Float, default=0.0)
+
+class Flavor(Base):
+    __tablename__ = "flavors"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    image_url = Column(String, nullable=True)
+    category = Column(String, default="Salgada") 
+
 class Order(Base):
     __tablename__ = "orders"
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
-    price = Column("price", Float, default=0.0)
-    status = Column(
-        Enum(OrderStatus), default=OrderStatus.PENDENTE, nullable=False
-    )
-    user_id = Column("user_id", Integer, ForeignKey("users.id"))
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    status = Column(Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
+    total_price = Column(Float, nullable=False, default=0.0)
+    delivery_address = Column(String, nullable=False)
+    
+    
+    current_latitude = Column(Float, nullable=True)
+    current_longitude = Column(Float, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-    def __init__(self, user_id, status=OrderStatus.PENDENTE, price=0.0):
-        self.user_id = user_id
-        self.status = status
-        self.price = price
+    user = relationship("User", back_populates="orders")
+    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
 
-
-# 4. Modelo de Itens do Pedido
 class OrderItem(Base):
     __tablename__ = "order_items"
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
-    quantity = Column("quantity", Integer)
-    flavor = Column("flavor", String)
-    size = Column("size", String)
-    price_per_pizza = Column("price_per_pizza", Float)
-    order_id = Column("order_id", Integer, ForeignKey("orders.id"))
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("orders.id"))
+    size_id = Column(Integer, ForeignKey("pizza_sizes.id"))
+    crust_id = Column(Integer, ForeignKey("crusts.id"), nullable=True)
+    quantity = Column(Integer, default=1)
+    price = Column(Float, nullable=False) 
+    notes = Column(String, nullable=True) 
 
-    def __init__(self, quantity, flavor, size, price_per_pizza, order_id):
-        self.quantity = quantity
-        self.flavor = flavor
-        self.size = size
-        self.price_per_pizza = price_per_pizza
-        self.order_id = order_id
+    order = relationship("Order", back_populates="items")
+    size = relationship("PizzaSize")
+    crust = relationship("Crust")
+    flavors = relationship("Flavor", secondary=order_item_flavors)
