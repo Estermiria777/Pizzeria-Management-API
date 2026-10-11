@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Float, Enum, ForeignKey, DateTime, Table
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship 
 from database import Base
 
 order_item_flavors = Table(
