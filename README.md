@@ -1,6 +1,6 @@
 # Pizzeria-Management-API
 A robust RESTful API built with Python, FastAPI, PostgreSQL, and SQLAlchemy to manage pizza orders, customers, menu items, flavors, and real-time  ordering logic
- 
+  
 # 🍕 Pizzeria Management System API  
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
