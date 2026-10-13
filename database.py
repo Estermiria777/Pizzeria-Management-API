@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = os.getenv(
+DATABASE_URL = os.getenv( 
     "DATABASE_URL",
     "postgresql+psycopg://postgres:1234@localhost:5433/pizzaria"
 )
